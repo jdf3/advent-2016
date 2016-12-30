@@ -98,32 +98,68 @@ legal_floors = {0, 1, 2, 3}
 def moves(state):
     l, floors = state
     for l2 in {l + 1, l - 1} & legal_floors:
+        reps = set()
         for combo in combos(floors[l]):
             newfloors = tuple((s | combo if i == l2 else
                                s - combo if i == state.elevator else
                                s)
                                for (i, s) in enumerate(state.floors))
-            if legal_floor(newfloors[l]) and legal_floor(newfloors[l2]):
+            if is_legal_floor(newfloors[l]) and is_legal_floor(newfloors[l2]):
+                #can_rep = gen_can_rep(newfloors[l], newfloors[l2])
+                #if can_rep not in reps:
+                #    reps.add(can_rep)
                 yield State(l2, newfloors)
+
+def gen_can_rep(f1, f2):
+    f1_pairs, f1_m_f2_g, f1_m_solo, f1_g_solo, f1_g_f2_m, f2_pairs, f2_m_solo, f2_g_solo = [0]*8
+    for k in (s[0] for s in f1 if s.endswith('M')):
+        if k + 'G' in f1:
+            f1_pairs += 1
+        if k + 'G' in f2:
+            f1_m_f2_g += 1
+        else:
+            f1_m_solo += 1
+    for k in (s[0] for s in f1 if s.endswith('G')):
+        if k + 'M' in f2:
+            f1_g_f2_m += 1
+        elif k + 'M' not in f1:
+            f1_g_solo += 1
+    for k in (s[0] for s in f2 if s.endswith('M')):
+        if k + 'G' in f2:
+            f2_pairs += 1
+        elif k + 'G' not in f1:
+            f2_m_solo += 1
+    for k in (s[0] for s in f2 if s.endswith('G')):
+        if k + 'M' not in f1 | f2:
+            f2_g_solo += 1
+    # count pairs in f1
+    # count pairs in f2
+    # count gen-chip pairs in f1-f2
+    # count chip-gen pairs in f1-f2
+    # count loner chips in f1
+    # count loner chips in f2
+    # count loner generators in f1
+    # count loner generators in f2
+    # return a tuple of these counts
+    # NB: i suspect i might need to eliminate symmetry work for the solo
+    # counts, since this arguably isn't symmetry... but i haven't cooked
+    # up an example for when this would matter quite yet
+    return (f1_pairs, f2_pairs, f1_g_f2_m, f1_m_f2_g,
+            f1_m_solo, f2_m_solo, f1_g_solo, f2_g_solo)
 
 def combos(things):
     for s in chain(combinations(things, 1), combinations(things, 2)):
         yield frozenset(s)
 
-def legal_floor(floor):
-    """
-    Floor is legal iff no RTG or every chip has its corresponding RTG
-    """
+def is_legal_floor(floor):
     has_rtgs = any(r.endswith('G') for r in floor)
     chips = [c for c in floor if c.endswith('M')]
     return not has_rtgs or all(generator_for(c) in floor for c in chips)
 
-def generator_for(chip): return chip[0] + 'G'
+def generator_for(chip):
+    return chip[0] + 'G'
 
 def h_to_top(state):
-    """
-    An estimate of the number of moves needed to move everything to top.
-    """
     total = sum(len(floor) * i for (i, floor) in enumerate(reversed(state.floors)))
     return math.ceil(total / 2) # Can move two items in one move.
 
@@ -141,7 +177,7 @@ def part_one():
                  fs('TM'),
                  fs())), h_to_top, moves)) - 1)
 
-part_one()
+#part_one()
 
 def part_two():
     print("Part two:",
@@ -151,4 +187,4 @@ def part_two():
                  fs('TM'),
                  fs())), h_to_top, moves)) - 1)
 
-part_two()
+#part_two()
