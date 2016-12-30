@@ -2,21 +2,25 @@ from heapq import heappush, heappop
 import math
 
 # stolen from solution 11
-def astar_search(start, h_func, moves_func):
+def astar_search(start, h_func, moves_func, max_cost=None):
     frontier = [(h_func(start), start)] # heap
     previous = {start: None}
     path_cost = {start: 0}
+    visited = set()
+    visited.add(start)
     while frontier:
         (f, s) = heappop(frontier)
         if h_func(s) == 0:
             return path(previous, s)
         for s2 in moves_func(s):
             new_cost = path_cost[s] + 1
+            if max_cost and new_cost > max_cost: continue
+            visited.add(s2)
             if s2 not in path_cost or new_cost < path_cost[s2]:
                 heappush(frontier, (new_cost + h_func(s2), s2))
                 path_cost[s2] = new_cost
                 previous[s2] = s
-    return dict(fail=True, front=len(frontier), prev=len(previous))
+    return dict(fail=True, front=len(frontier), prev=len(previous), reached=visited)
 
 def path(previous, s):
     return [] if s is None else path(previous, previous[s]) + [s]
@@ -53,4 +57,11 @@ def part_one():
     print("Part one:", len(astar_search((1, 1), gen_h_func((31, 39)), gen_moves_func(1358))) - 1)
 
 part_one()
+
+def part_two():
+    # I feel bad abusing A* like this...
+    print("Part two:", len(astar_search((1, 1), gen_h_func((100,100)), gen_moves_func(1358), max_cost=50)['reached']))
+
+part_two()
+
 
